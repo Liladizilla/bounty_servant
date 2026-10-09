@@ -1,8 +1,8 @@
 # Bounty Servant
 
-**A daily radar for software-development bounties hiding in GitHub issues.**
+**A daily, safety-first radar for software-development bounties hiding in GitHub issues.**
 
-Bounty Servant searches open GitHub issues for bounty, reward, paid-task, and cash-payout signals. It ranks candidates, flags stale or possibly claimed offers, and creates a Markdown report plus JSON data you can inspect from your phone.
+Bounty Servant searches open GitHub issues for bounty, reward, paid-task, and cash-payout signals. It ranks candidates, reads issue details and comments for the strongest results, flags stale/claimed/risky offers, maintains a durable ledger, and creates a Markdown report plus JSON data you can inspect from your phone.
 
 ## What it does
 
@@ -11,8 +11,10 @@ Bounty Servant searches open GitHub issues for bounty, reward, paid-task, and ca
 - Flags issues not updated in more than 90 days.
 - Flags text that may indicate a bounty has already been claimed or paid.
 - Flags dangerous requests for upfront payments or secrets.
+- Verifies the strongest candidates against the issue and its comments before labeling them verified paid candidates.
+- Persists discovery and lifecycle fields in `data/ledger.json` to prevent duplicate work.
 - Generates a ranked Markdown report and JSON file.
-- Runs daily at **07:17 East Africa Time**, with a manual run option.
+- Runs daily at **06:00 East Africa Time**, with a manual run option.
 - Uploads reports as workflow artifacts for 30 days.
 - Can send a short Telegram alert when you configure two GitHub Actions secrets.
 
@@ -44,10 +46,10 @@ For higher GitHub API limits, set GITHUB_TOKEN in your environment. Never paste 
 
 ## Daily automation
 
-The workflow file at .github/workflows/daily.yml runs at 04:17 UTC (07:17 in Kenya). Start it manually from Actions → Bounty Servant Daily Radar → Run workflow.
+The workflow file at `.github/workflows/daily.yml` runs at 03:00 UTC (06:00 in Kenya). It runs unit tests, searches GitHub, verifies the strongest candidates, updates `data/ledger.json`, and uploads the report artifact. Start it manually from Actions → Bounty Servant Daily Radar → Run workflow.
 
 Open a workflow run to read the summary or download its report artifact. GitHub may delay scheduled runs during periods of high load.
 
 ## Current scope
 
-Version 0.3 searches GitHub issues, flags stale/claimed/risky signals, and can send optional Telegram alerts. It does not submit proposals, comment on issues, claim bounties, or perform work automatically. Those actions remain under your control.
+Version 0.4 searches GitHub issues, verifies top issue discussions, flags stale/claimed/risky signals, persists a ledger, and can send optional Telegram alerts. **Dry-run mode is always enabled in the workflow:** it does not submit proposals, comment on issues, claim bounties, create branches, push to bounty repositories, or open PRs. Those actions remain under your control until a later explicitly authorized implementation phase.

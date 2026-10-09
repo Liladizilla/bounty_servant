@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from bounty_servant import classify_reward, extract_reward, score_issue, status_flags
+from bounty_servant import classify_reward, extract_reward, has_positive_reward, score_issue, status_flags
 
 
 class RewardDetectionTests(unittest.TestCase):
@@ -49,6 +49,10 @@ class RewardDetectionTests(unittest.TestCase):
                 "updated_at": recent, "comments": 2}
         claimed = {**base, "body": "A $100 reward is available. The bounty has been claimed."}
         self.assertLess(score_issue(claimed)[0], score_issue(base)[0])
+
+    def test_zero_dollar_reward_is_not_positive(self):
+        self.assertFalse(has_positive_reward("$0"))
+        self.assertTrue(has_positive_reward("$25"))
 
 
 if __name__ == "__main__":
