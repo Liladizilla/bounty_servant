@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0d12">
+<title>Bounty Servant · Command centre</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d12;--panel:#11151d;--panel2:#151a24;--line:#252c39;--text:#edf1f7;--muted:#8e9aab;--blue:#72a7ff;--cyan:#62d8d0;--green:#61d095;--amber:#f2bd67;--red:#f17d87;--purple:#b7a1ff;--radius:14px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45}button,input,select{font:inherit}button{cursor:pointer}a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}.shell{min-height:100vh;display:grid;grid-template-columns:220px minmax(0,1fr)}.sidebar{border-right:1px solid var(--line);padding:24px 14px;background:#0e1118;display:flex;flex-direction:column;gap:28px}.brand{display:flex;gap:10px;align-items:center;padding:0 9px}.mark{height:34px;width:34px;border:1px solid #34435b;border-radius:10px;display:grid;place-items:center;color:var(--cyan);font-weight:800;font-size:17px;background:#141e2b}.brand strong{display:block;font-size:14px;letter-spacing:.02em}.brand small{color:var(--muted);font-size:11px}.nav-label{font-size:10px;letter-spacing:.15em;color:#657286;text-transform:uppercase;padding:0 12px;margin-bottom:7px}.nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;color:#9aa6b7;border-radius:9px;margin:2px 0}.nav-item.active{color:var(--text);background:#1a2230;box-shadow:inset 2px 0 var(--blue)}.nav-icon{width:17px;text-align:center;color:#7d91ac}.side-note{margin-top:auto;padding:13px;border:1px solid var(--line);border-radius:12px;background:#11151d}.side-note .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px}.side-note p{font-size:11px;color:var(--muted);margin:7px 0 0}.main{min-width:0;padding:28px clamp(16px,3vw,40px) 34px;max-width:1700px;width:100%;margin:0 auto}.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:26px}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);margin:0 0 5px}.topbar h1{font-size:clamp(23px,2.5vw,30px);letter-spacing:-.045em;margin:0;font-weight:680}.subhead{margin:5px 0 0;color:var(--muted);font-size:12px}.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.btn{background:#171d28;border:1px solid #30394a;color:var(--text);border-radius:9px;padding:9px 12px;font-size:12px}.btn:hover{background:#202a39}.btn.primary{background:#243b5e;border-color:#365886;color:#eaf2ff}.updated{font-size:11px;color:var(--muted);text-align:right;margin-right:4px}.status-line{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}.live-dot{height:7px;width:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px #61d09514}.grid{display:grid;gap:14px}.kpis{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:17px;min-width:0}.kpi-top{display:flex;justify-content:space-between;gap:8px;align-items:center;color:var(--muted);font-size:11px}.kpi-symbol{width:29px;height:29px;border-radius:9px;background:#1b2432;color:var(--blue);display:grid;place-items:center;font-size:14px}.kpi-value{font-size:clamp(25px,3vw,34px);font-weight:680;letter-spacing:-.05em;margin:12px 0 4px;line-height:1.1}.kpi-foot{font-size:11px;color:var(--muted)}.kpi-foot strong{color:var(--cyan);font-weight:550}.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px}.section-head h2{font-size:13px;margin:0;font-weight:620}.section-head p{margin:4px 0 0;font-size:11px;color:var(--muted)}.section-head .right-note{font-size:10px;color:var(--muted);white-space:nowrap}.charts{grid-template-columns:minmax(0,1.35fr) minmax(280px,.9fr);margin-bottom:14px}.chart-area{height:220px;position:relative}.chart-area svg{width:100%;height:100%;display:block;overflow:visible}.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:10px;color:var(--muted)}.legend span{display:inline-flex;align-items:center;gap:6px}.legend i{display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--blue)}.pipeline{display:flex;flex-direction:column;gap:14px;padding:7px 0 4px}.pipe-row{display:grid;grid-template-columns:95px minmax(20px,1fr) 34px;gap:12px;align-items:center}.pipe-name{font-size:11px;color:#b6c0cf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pipe-track{height:8px;background:#202633;border-radius:99px;overflow:hidden}.pipe-fill{height:100%;border-radius:99px;min-width:0;background:var(--blue)}.pipe-count{text-align:right;font-size:12px;font-variant-numeric:tabular-nums}.pipeline-note{font-size:10px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:16px}.bottom-grid{grid-template-columns:minmax(0,1.65fr) minmax(250px,.75fr);margin-bottom:14px}.table-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.field{min-width:0;background:#0d1118;border:1px solid #303847;color:var(--text);border-radius:8px;padding:9px 10px;font-size:11px;outline:none}.field:focus{border-color:#638ac5;box-shadow:0 0 0 2px #72a7ff1c}.search{flex:1;min-width:140px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse;min-width:620px}th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:550;color:#8190a4;background:#141a24;padding:11px 12px;white-space:nowrap}td{padding:12px;border-top:1px solid #202633;font-size:11px;color:#b8c2d0;vertical-align:top}tbody tr:hover{background:#151b26}.issue-title{display:block;color:#e5ebf5;font-weight:560;max-width:350px;line-height:1.4}.repo{font-size:10px;color:var(--muted);display:block;margin-top:4px}.score{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:4px 6px;border-radius:6px;background:#1d2a3c;color:#9cc4ff;font-weight:700}.pill{display:inline-block;border-radius:99px;padding:4px 7px;font-size:9px;white-space:nowrap;border:1px solid #333d4d;color:#aeb9c8;background:#1a202b}.pill.verified{color:var(--green);border-color:#275541;background:#14251f}.pill.review{color:var(--amber);border-color:#5b4627;background:#292115}.pill.paid{color:var(--cyan);border-color:#285654;background:#142725}.pill.unknown{color:#aab4c3}.muted{color:var(--muted)}.empty{padding:28px;text-align:center;color:var(--muted);font-size:12px}.run-list{display:flex;flex-direction:column;gap:0}.run-item{display:grid;grid-template-columns:9px minmax(0,1fr) auto;gap:10px;align-items:start;padding:12px 0;border-bottom:1px solid #222936}.run-item:last-child{border-bottom:0}.run-dot{height:8px;width:8px;border-radius:50%;background:#738096;margin-top:5px}.run-dot.success{background:var(--green)}.run-dot.failure{background:var(--red)}.run-dot.progress{background:var(--amber)}.run-name{font-size:11px;font-weight:550;color:#dce3ed;display:block}.run-meta{font-size:10px;color:var(--muted);margin-top:4px}.run-result{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}.strategy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.strategy-item{border:1px solid var(--line);border-radius:11px;padding:13px;background:#10141c}.strategy-number{font-size:10px;color:var(--blue);letter-spacing:.1em}.strategy-item strong{display:block;font-size:11px;margin:8px 0 5px}.strategy-item p{margin:0;color:var(--muted);font-size:10px;line-height:1.5}.foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px;margin-top:22px;font-size:10px;color:#6f7b8d}.foot a{color:#9dbcf0}.error{color:var(--red);font-size:11px;padding:10px 0}.skeleton{color:#778397}.hide{display:none!important}
+@media(max-width:1100px){.shell{grid-template-columns:68px minmax(0,1fr)}.sidebar{padding:20px 9px}.brand{padding:0;justify-content:center}.brand-copy,.nav-label,.nav-text,.side-note{display:none}.nav-item{justify-content:center;padding:12px 6px}.charts{grid-template-columns:minmax(0,1fr) minmax(260px,.85fr)}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.shell{display:block}.sidebar{display:none}.main{padding:20px 13px 25px}.topbar{align-items:flex-start;flex-direction:column;margin-bottom:19px}.actions{width:100%}.updated{text-align:left}.charts,.bottom-grid{grid-template-columns:minmax(0,1fr)}.chart-area{height:195px}.card{padding:14px}.strategy{grid-template-columns:1fr}.kpis{gap:9px}.kpi-value{font-size:28px}.kpi-top{font-size:10px}.right-note{display:none}.foot{display:block}.foot span{display:block;margin:5px 0}}
+@media(max-width:380px){.kpis{grid-template-columns:1fr 1fr}.kpi-value{font-size:25px}.card{padding:12px}.pipe-row{grid-template-columns:82px minmax(20px,1fr) 24px;gap:8px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar" aria-label="Main navigation">
+  <div class="brand"><div class="mark">B</div><div class="brand-copy"><strong>Bounty Servant</strong><small>Open-source radar</small></div></div>
+  <div><div class="nav-label">Workspace</div><div class="nav-item active"><span class="nav-icon">▦</span><span class="nav-text">Overview</span></div><a class="nav-item" href="#opportunities"><span class="nav-icon">⌕</span><span class="nav-text">Opportunities</span></a><a class="nav-item" href="#runs"><span class="nav-icon">↻</span><span class="nav-text">Workflow runs</span></a><a class="nav-item" href="#strategy"><span class="nav-icon">⌁</span><span class="nav-text">Strategy</span></a></div>
+  <div class="side-note"><span class="dot"></span><strong style="font-size:11px">Dry-run protected</strong><p>Discovery only. No automatic claims, comments, pushes or pull requests.</p></div>
+</aside>
+<main class="main">
+<header class="topbar">
+  <div><p class="eyebrow">Operations / Overview</p><h1>Command centre</h1><p class="subhead">A measured view of bounty discovery, quality and automation.</p></div>
+  <div class="actions"><div><div class="status-line"><span class="live-dot"></span><span id="connection">Connecting to GitHub</span></div><div class="updated" id="updated">Loading repository data…</div></div><button class="btn" id="refresh" type="button">↻ Refresh</button><button class="btn primary" id="export" type="button">↓ Export CSV</button></div>
+</header>
+<div id="loadError" class="error hide" role="status"></div>
+<section class="grid kpis" aria-label="Key metrics">
+  <article class="card"><div class="kpi-top"><span>Tracked opportunities</span><span class="kpi-symbol">◈</span></div><div class="kpi-value skeleton" id="total">—</div><div class="kpi-foot" id="trackedFoot">From the persistent ledger</div></article>
+  <article class="card"><div class="kpi-top"><span>Verified pre-check</span><span class="kpi-symbol" style="color:var(--green)">✓</span></div><div class="kpi-value skeleton" id="verified">—</div><div class="kpi-foot">Shortlist signal, <strong>not payment proof</strong></div></article>
+  <article class="card"><div class="kpi-top"><span>Manual review</span><span class="kpi-symbol" style="color:var(--amber)">!</span></div><div class="kpi-value skeleton" id="review">—</div><div class="kpi-foot">Needs a human check</div></article>
+  <article class="card"><div class="kpi-top"><span>Confirmed paid</span><span class="kpi-symbol" style="color:var(--cyan)">$</span></div><div class="kpi-value skeleton" id="paid">—</div><div class="kpi-foot">Ledger entries marked paid only</div></article>
+</section>
+<section class="grid charts">
+  <article class="card"><div class="section-head"><div><h2>First-seen trend</h2><p>Newly tracked issues by first-seen date · last 14 days</p></div><span class="right-note">LEDGER HISTORY</span></div><div class="chart-area" id="trend" aria-label="Newly tracked opportunities trend"><div class="empty">Loading trend…</div></div><div class="legend"><span><i style="background:var(--blue)"></i>New opportunities</span></div></article>
+  <article class="card"><div class="section-head"><div><h2>Score distribution</h2><p>Heuristic score, not success probability</p></div><span class="right-note">0–20+</span></div><div class="chart-area" id="scores" aria-label="Opportunity score distribution"><div class="empty">Loading scores…</div></div><div class="legend"><span><i style="background:var(--purple)"></i>Tracked issues</span></div></article>
+</section>
+<section class="grid bottom-grid">
+  <article class="card" id="opportunities"><div class="section-head"><div><h2>Priority opportunities</h2><p>Ranked by latest heuristic score · open original issue to verify terms</p></div><span class="right-note" id="showing">—</span></div>
+    <div class="table-tools"><input id="search" class="field search" type="search" placeholder="Search issue or repository…" aria-label="Search opportunities"><select id="verificationFilter" class="field" aria-label="Filter verification"><option value="all">All verification</option><option value="verified_paid_candidate">Verified pre-check</option><option value="needs_manual_review">Manual review</option><option value="not_verified">Not verified</option></select><select id="statusFilter" class="field" aria-label="Filter status"><option value="all">All stages</option><option value="discovered">Discovered</option><option value="investigating">Investigating</option><option value="proposal_ready">Proposal ready</option><option value="submitted">Submitted</option><option value="accepted">Accepted</option><option value="paid">Paid</option></select></div>
+    <div class="table-wrap"><table><thead><tr><th>Opportunity</th><th>Score</th><th>Reward text</th><th>Verification</th><th>Stage</th></tr></thead><tbody id="opportunityRows"><tr><td colspan="5" class="empty">Loading ledger…</td></tr></tbody></table></div>
+  </article>
+  <article class="card" id="runs"><div class="section-head"><div><h2>Automation health</h2><p>Recent GitHub Actions activity</p></div><span class="right-note" id="runCount">LIVE API</span></div><div id="runSummary" class="pipeline"><div class="empty">Loading workflow runs…</div></div><div class="pipeline-note">A successful workflow means the job completed. It does not mean a bounty was accepted or paid.</div></article>
+</section>
+<section class="card" id="strategy" style="margin-bottom:14px"><div class="section-head"><div><h2>Operating strategy</h2><p>Rules grounded in what the current system can measure</p></div><span class="right-note">SAFETY FIRST</span></div><div class="strategy">
+  <div class="strategy-item"><span class="strategy-number">01 / VERIFY</span><strong>Prove the reward terms</strong><p>Read the issue and newest comments. An amount in text is evidence to inspect, not proof of funding.</p></div>
+  <div class="strategy-item"><span class="strategy-number">02 / PRIORITIZE</span><strong>Score is a filter, not a forecast</strong><p>Use recency, reward evidence and competition signals to shortlist. Inspect the repository before committing time.</p></div>
+  <div class="strategy-item"><span class="strategy-number">03 / TRACK</span><strong>Count outcomes, not promises</strong><p>Keep investigation, submitted PR, acceptance and confirmed payment separate. No payout rate until outcome history exists.</p></div>
+</div></section>
+<footer class="foot"><span>Source: <a href="https://github.com/Liladizilla/bounty_servant/blob/main/data/ledger.json" target="_blank" rel="noreferrer">repository ledger</a> · <a href="https://github.com/Liladizilla/bounty_servant/actions" target="_blank" rel="noreferrer">workflow runs</a></span><span>Reward mentions are not guaranteed payouts · Dry-run remains enabled</span></footer>
+</main></div>
+<script>
+(() => {
+  "use strict";
+  const OWNER = "Liladizilla", REPO = "bounty_servant";
+  const LEDGER_URL = "https://raw.githubusercontent.com/" + OWNER + "/" + REPO + "/main/data/ledger.json";
+  const RUNS_URL = "https://api.github.com/repos/" + OWNER + "/" + REPO + "/actions/runs?per_page=12";
+  let opportunities = [];
+  const $ = id => document.getElementById(id);
+  const fmt = n => new Intl.NumberFormat("en-US").format(n || 0);
+  const date = value => { if (!value) return "Unknown"; const d = new Date(value); return Number.isNaN(d.getTime()) ? "Unknown" : d.toLocaleDateString(undefined,{month:"short",day:"numeric"}); };
+  const when = value => { if (!value) return "Unknown"; const d = new Date(value); return Number.isNaN(d.getTime()) ? "Unknown" : d.toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}); };
+  const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const pill = value => {
+    const label = String(value || "unknown").replaceAll("_"," ");
+    const klass = value === "verified_paid_candidate" ? "verified" : value === "needs_manual_review" ? "review" : value === "paid" ? "paid" : "unknown";
+    return '<span class="pill '+klass+'">'+escapeHtml(label)+'</span>';
+  };
+  function renderTrend(items) {
+    const days = [];
+    const now = new Date(); now.setHours(0,0,0,0);
+    for(let i=13;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);days.push({key:d.toISOString().slice(0,10),label:d.toLocaleDateString(undefined,{month:"short",day:"numeric"}),count:0});}
+    const index = new Map(days.map((d,i)=>[d.key,i]));
+    items.forEach(item=>{const key=String(item.first_seen||"").slice(0,10);if(index.has(key))days[index.get(key)].count++;});
+    const max=Math.max(1,...days.map(d=>d.count)), w=640,h=205,left=28,right=10,top=12,bottom=32,plotW=w-left-right,plotH=h-top-bottom;
+    const pts=days.map((d,i)=>({x:left+i*plotW/(days.length-1),y:top+plotH-(d.count/max)*plotH,...d}));
+    const grid=[0,.5,1].map(f=>{const y=top+plotH-f*plotH;return '<line x1="'+left+'" y1="'+y+'" x2="'+(w-right)+'" y2="'+y+'" stroke="#28303d" stroke-dasharray="3 5"/><text x="'+(left-8)+'" y="'+(y+4)+'" text-anchor="end" fill="#78869a" font-size="10">'+Math.round(max*f)+'</text>';}).join("");
+    const line=pts.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" ");
+    const area=line+" L "+pts[pts.length-1].x+" "+(top+plotH)+" L "+pts[0].x+" "+(top+plotH)+" Z";
+    const labels=pts.map((p,i)=>(i%2===0||i===pts.length-1)?'<text x="'+p.x+'" y="'+(h-8)+'" text-anchor="middle" fill="#78869a" font-size="9">'+escapeHtml(p.label)+'</text>':"").join("");
+    const circles=pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="#72a7ff" stroke="#11151d" stroke-width="2"><title>'+escapeHtml(p.label)+': '+p.count+' new issues</title></circle>').join("");
+    $("trend").innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="New issues by first-seen date for the past 14 days">'+grid+'<path d="'+area+'" fill="#72a7ff" opacity=".10"/><path d="'+line+'" fill="none" stroke="#72a7ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+circles+labels+'</svg>';
+  }
+  function renderScores(items) {
+    const bins=[{label:"0–4",min:0,max:4},{label:"5–9",min:5,max:9},{label:"10–14",min:10,max:14},{label:"15–19",min:15,max:19},{label:"20+",min:20,max:Infinity}];
+    bins.forEach(b=>b.count=items.filter(x=>Number(x.last_score||0)>=b.min&&Number(x.last_score||0)<=b.max).length);
+    const max=Math.max(1,...bins.map(b=>b.count)),w=440,h=205,left=16,right=12,top=12,bottom=32,gap=15,bw=(w-left-right-gap*(bins.length-1))/bins.length,plotH=h-top-bottom;
+    const grid=[0,.5,1].map(f=>{const y=top+plotH-f*plotH;return '<line x1="'+left+'" y1="'+y+'" x2="'+(w-right)+'" y2="'+y+'" stroke="#28303d" stroke-dasharray="3 5"/>';}).join("");
+    const bars=bins.map((b,i)=>{const bh=b.count/max*plotH,x=left+i*(bw+gap),y=top+plotH-bh;return '<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="4" fill="#b7a1ff" opacity="'+(i>2?".95":".7")+'"><title>'+b.label+': '+b.count+'</title></rect><text x="'+(x+bw/2)+'" y="'+(h-8)+'" text-anchor="middle" fill="#8e9aab" font-size="10">'+b.label+'</text><text x="'+(x+bw/2)+'" y="'+Math.max(top+10,y-5)+'" text-anchor="middle" fill="#d9d1ff" font-size="10">'+b.count+'</text>';}).join("");
+    $("scores").innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Counts of opportunities grouped by heuristic score">'+grid+bars+'</svg>';
+  }
+  function renderPipeline(items) {
+    const stages=[["discovered","Discovered","#72a7ff"],["investigating","Investigating","#62d8d0"],["proposal_ready","Proposal ready","#b7a1ff"],["submitted","Submitted","#f2bd67"],["accepted","Accepted","#61d095"],["paid","Paid","#62d8d0"]];
+    const counts=Object.fromEntries(stages.map(([key])=>[key,items.filter(x=>x.status===key).length]));
+    const max=Math.max(1,...stages.map(([key])=>counts[key]));
+    $("runSummary").innerHTML=stages.map(([key,label,color])=>'<div class="pipe-row"><span class="pipe-name">'+label+'</span><div class="pipe-track"><div class="pipe-fill" style="width:'+(counts[key]/max*100)+'%;background:'+color+'"></div></div><span class="pipe-count">'+fmt(counts[key])+'</span></div>').join("");
+  }
+  function renderTable() {
+    const query=$("search").value.trim().toLowerCase(), vf=$("verificationFilter").value, sf=$("statusFilter").value;
+    const rows=opportunities.filter(x=>(vf==="all"||x.verification===vf)&&(sf==="all"||x.status===sf)&&(!query||[x.title,x.repository,x.issue_url].some(v=>String(v||"").toLowerCase().includes(query)))).sort((a,b)=>(Number(b.last_score)||0)-(Number(a.last_score)||0)||String(b.last_seen||"").localeCompare(String(a.last_seen||"")));
+    $("showing").textContent=fmt(rows.length)+" shown";
+    if(!rows.length){$("opportunityRows").innerHTML='<tr><td colspan="5" class="empty">No matching opportunities</td></tr>';return;}
+    $("opportunityRows").innerHTML=rows.slice(0,30).map(x=>'<tr><td><a class="issue-title" href="'+escapeHtml(x.issue_url||"#")+'" target="_blank" rel="noreferrer">'+escapeHtml(x.title||"Untitled issue")+'</a><span class="repo">'+escapeHtml(x.repository||"Unknown repository")+' · seen '+escapeHtml(date(x.first_seen))+'</span></td><td><span class="score">'+fmt(Number(x.last_score)||0)+'</span></td><td>'+escapeHtml(x.last_reward_evidence||"No amount detected")+'</td><td>'+pill(x.verification)+'</td><td>'+pill(x.status)+'</td></tr>').join("");
+  }
+  function renderRuns(payload) {
+    const runs=payload.workflow_runs||[], done=runs.filter(r=>r.status==="completed"), successes=done.filter(r=>r.conclusion==="success").length, failures=done.filter(r=>["failure","timed_out","action_required"].includes(r.conclusion)).length;
+    $("runCount").textContent=runs.length+" RECENT";
+    if(!runs.length){$("runSummary").innerHTML='<div class="empty">No workflow runs returned by the public API.</div>';return;}
+    const summary='<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:7px"><div style="background:#151c25;padding:10px;border-radius:9px"><div class="muted" style="font-size:10px">Completed</div><strong style="font-size:19px">'+done.length+'</strong></div><div style="background:#151c25;padding:10px;border-radius:9px"><div class="muted" style="font-size:10px">Success</div><strong style="font-size:19px;color:var(--green)">'+successes+'</strong></div><div style="background:#151c25;padding:10px;border-radius:9px"><div class="muted" style="font-size:10px">Failed</div><strong style="font-size:19px;color:var(--red)">'+failures+'</strong></div></div>';
+    const list=runs.slice(0,7).map(r=>{const state=r.status==="completed"?(r.conclusion||"completed"):r.status;const cls=state==="success"?"success":["failure","timed_out","action_required"].includes(state)?"failure": "progress";return '<a class="run-item" href="'+escapeHtml(r.html_url)+'" target="_blank" rel="noreferrer"><span class="run-dot '+cls+'"></span><span><span class="run-name">'+escapeHtml(r.name||r.display_title||"Workflow run")+'</span><span class="run-meta">#'+r.run_number+' · '+escapeHtml(when(r.updated_at||r.created_at))+'</span></span><span class="run-result">'+escapeHtml(state.replaceAll("_"," "))+'</span></a>';}).join("");
+    $("runSummary").innerHTML=summary+'<div class="run-list">'+list+'</div>';
+  }
+  async function load() {
+    $("refresh").disabled=true;$("connection").textContent="Refreshing";$("loadError").classList.add("hide");
+    try {
+      const response=await fetch(LEDGER_URL+"?t="+Date.now(),{cache:"no-store"});
+      if(!response.ok)throw new Error("Ledger request returned HTTP "+response.status);
+      const ledger=await response.json();
+      const raw=ledger.opportunities||{};
+      opportunities=(Array.isArray(raw)?raw:Object.values(raw)).filter(x=>x&&typeof x==="object");
+      const count=fn=>opportunities.filter(fn).length;
+      $("total").textContent=fmt(opportunities.length);
+      $("verified").textContent=fmt(count(x=>x.verification==="verified_paid_candidate"));
+      $("review").textContent=fmt(count(x=>x.verification==="needs_manual_review"));
+      $("paid").textContent=fmt(count(x=>x.status==="paid"));
+      $("updated").textContent="Ledger updated "+when(ledger.updated_at);
+      $("trackedFoot").textContent=fmt(count(x=>x.status==="discovered"))+" currently discovered";
+      renderTrend(opportunities);renderScores(opportunities);renderPipeline(opportunities);renderTable();
+      $("connection").textContent="GitHub data connected";
+      try { const r=await fetch(RUNS_URL,{headers:{Accept:"application/vnd.github+json"}});if(!r.ok)throw new Error("Actions API HTTP "+r.status);renderRuns(await r.json()); }
+      catch(e){$("runSummary").innerHTML='<div class="empty">Workflow API unavailable. <a href="https://github.com/'+OWNER+'/'+REPO+'/actions">Open Actions</a></div>'; $("runCount").textContent="UNAVAILABLE";}
+    } catch(error) {
+      $("connection").textContent="Data unavailable";
+      $("loadError").textContent="Could not load live repository data: "+error.message+". Open the repository ledger directly or refresh later.";
+      $("loadError").classList.remove("hide");
+      $("opportunityRows").innerHTML='<tr><td colspan="5" class="empty">Live data could not be loaded.</td></tr>';
+    } finally {$("refresh").disabled=false;}
+  }
+  function exportCsv() {
+    const cols=["title","repository","issue_url","last_score","last_reward_evidence","verification","status","first_seen","last_seen","pr_url"];
+    const quote=v=>'"'+String(v??"").replaceAll('"','""')+'"';
+    const csv=[cols.join(","),...opportunities.map(o=>cols.map(k=>quote(o[k])).join(","))].join("\r\n");
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download="bounty-servant-opportunities.csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  }
+  $("refresh").addEventListener("click",load);$("export").addEventListener("click",exportCsv);
+  ["search","verificationFilter","statusFilter"].forEach(id=>$(id).addEventListener(id==="search"?"input":"change",renderTable));
+  load();
+})();
+</script>
+</body>
+</html>
