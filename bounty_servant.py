@@ -30,8 +30,8 @@ SEARCH_QUERIES = [
 
 MONEY_PATTERNS = [
     re.compile(r"(?i)(?:\bUSD\s*|\bUS\$\s*|\$\s*)\d[\d,]*(?:\.\d{1,2})?"),
-    re.compile(r"(?i)\b\d[\d,]*(?:\.\d{1,2})?\s*(?:USDC|USDT|ETH|BTC)\b"),
-    re.compile(r"(?i)\b(?:reward|bounty|prize)\s*(?:amount|of|:|=)\s*\$?\s*\d[\d,]*(?:\.\d{1,2})?"),
+    re.compile(r"(?i)\b\d[\d,]*(?:\.\d{1,2})?\s*(?:USD|USDC|USDT|RTC|ETH|BTC|SOL|XMR|DOGE)\b"),
+    re.compile(r"(?i)\b(?:reward|bounty|prize)\s*(?:amount|of|:|=)\s*(?:USD\s*|US\$\s*|\$\s*)\d[\d,]*(?:\.\d{1,2})?"),
 ]
 BOUNTY_WORDS = re.compile(r"(?i)\b(bounty|bounties|reward|paid issue|cash prize|prize money|paid task)\b")
 PAYMENT_WORDS = re.compile(r"(?i)\b(pay|paid|payment|reward|bounty|cash|USDC|USDT|ETH|BTC|prize)\b")
