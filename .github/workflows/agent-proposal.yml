@@ -26,9 +26,10 @@ jobs:
           python-version: "3.12"
       - name: Prepare proposal
         env:
+          ISSUE_URL: ${{ inputs.issue_url }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GEMINI }}
           BOUNTY_LLM_PROVIDER: gemini
-        run: python bounty_agent.py --issue-url "${{ inputs.issue_url }}" --output-dir reports/agent-proposals
+        run: python bounty_agent.py --issue-url "$ISSUE_URL" --output-dir reports/agent-proposals
       - name: Upload proposal artifacts
         uses: actions/upload-artifact@v4
         with:
