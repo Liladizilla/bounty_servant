@@ -1,0 +1,39 @@
+name: Prepare Bounty Patch Proposal
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_url:
+        description: "Public GitHub issue URL for the bounty to inspect"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  prepare-proposal:
+    name: Analyze issue and prepare patch proposal
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out Bounty Servant
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Prepare proposal
+        env:
+          ISSUE_URL: ${{ inputs.issue_url }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GEMINI }}
+          BOUNTY_LLM_PROVIDER: gemini
+        run: python bounty_agent.py --issue-url "$ISSUE_URL" --output-dir reports/agent-proposals
+      - name: Upload proposal artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bounty-patch-proposal-${{ github.run_id }}
+          path: reports/agent-proposals/
+          if-no-files-found: error
+          retention-days: 14
