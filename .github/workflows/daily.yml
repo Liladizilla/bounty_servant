@@ -1,0 +1,57 @@
+name: Bounty Servant Daily Radar
+
+on:
+  schedule:
+    # 04:17 UTC = 07:17 East Africa Time (UTC+3)
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bounty-servant-daily
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Discover and rank bounties
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Search GitHub issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python bounty_servant.py
+
+      - name: Add report to workflow summary
+        if: always()
+        run: |
+          if [ -f reports/latest.md ]; then
+            cat reports/latest.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "The report was not generated. Check the earlier step logs." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload report artifact
+        if: always() && hashFiles('reports/latest.md') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: bounty-servant-report-${{ github.run_id }}
+          path: |
+            reports/latest.md
+            reports/latest.json
+            reports/bounties-*.md
+          if-no-files-found: warn
+          retention-days: 30
