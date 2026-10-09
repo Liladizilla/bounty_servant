@@ -58,13 +58,16 @@ jobs:
           else
             echo "The report was not generated. Check the earlier step logs." >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Persist the bounty ledger
+      - name: Record daily dashboard metrics
+        if: success()
+        run: python scripts/update_metrics_history.py
+      - name: Persist the bounty ledger and metrics history
         if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/ledger.json
-          git diff --cached --quiet || git commit -m "Update bounty ledger [skip ci]"
+          git add data/ledger.json data/metrics-history.json
+          git diff --cached --quiet || git commit -m "Update bounty ledger and dashboard metrics [skip ci]"
           git push
       - name: Upload report artifact
         if: always() && hashFiles('reports/latest.md') != ''
