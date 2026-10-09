@@ -39,9 +39,11 @@ class DashboardSmokeTests(unittest.TestCase):
         self.assertGreaterEqual(self.parser.table_headers, 5)
 
     def test_dashboard_has_live_data_endpoints(self):
-        self.assertIn("raw.githubusercontent.com/Liladizilla/bounty_servant/main/data/ledger.json", self.source)
-        self.assertIn("api.github.com/repos/Liladizilla/bounty_servant/actions/runs", self.source)
-        self.assertIn("cache:\"no-store\"", self.source)
+        self.assertIn("const LEDGER_URL", self.source)
+        self.assertIn("data/ledger.json", self.source)
+        self.assertIn("api.github.com/repos/", self.source)
+        self.assertIn("/actions/runs?per_page=12", self.source)
+        self.assertIn('cache:"no-store"', self.source)
 
     def test_metrics_and_interactions_exist(self):
         for element_id in ("total", "verified", "review", "paid", "trend", "scores",
