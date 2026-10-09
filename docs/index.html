@@ -34,7 +34,7 @@
   <article class="card"><div class="kpi-top"><span>Confirmed paid</span><span class="kpi-symbol" style="color:var(--cyan)">$</span></div><div class="kpi-value skeleton" id="paid">—</div><div class="kpi-foot">Ledger entries marked paid only</div></article>
 </section>
 <section class="grid charts">
-  <article class="card"><div class="section-head"><div><h2>First-seen trend</h2><p>Newly tracked issues by first-seen date · last 14 days</p></div><span class="right-note">LEDGER HISTORY</span></div><div class="chart-area" id="trend" aria-label="Newly tracked opportunities trend"><div class="empty">Loading trend…</div></div><div class="legend"><span><i style="background:var(--blue)"></i>New opportunities</span></div></article>
+  <article class="card"><div class="section-head"><div><h2>Tracked history</h2><p>Daily ledger snapshots · last 30 records</p></div><span class="right-note">LEDGER HISTORY</span></div><div class="chart-area" id="trend" aria-label="Newly tracked opportunities trend"><div class="empty">Loading trend…</div></div><div class="legend"><span><i style="background:var(--blue)"></i>Tracked total</span><span><i style="background:var(--cyan)"></i>Verified pre-check</span></div></article>
   <article class="card"><div class="section-head"><div><h2>Score distribution</h2><p>Heuristic score, not success probability</p></div><span class="right-note">0–20+</span></div><div class="chart-area" id="scores" aria-label="Opportunity score distribution"><div class="empty">Loading scores…</div></div><div class="legend"><span><i style="background:var(--purple)"></i>Tracked issues</span></div></article>
 </section>
 <section class="grid bottom-grid">
@@ -68,20 +68,25 @@
     const klass = value === "verified_paid_candidate" ? "verified" : value === "needs_manual_review" ? "review" : value === "paid" ? "paid" : "unknown";
     return '<span class="pill '+klass+'">'+escapeHtml(label)+'</span>';
   };
-  function renderTrend(items) {
-    const days = [];
-    const now = new Date(); now.setHours(0,0,0,0);
-    for(let i=13;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);days.push({key:d.toISOString().slice(0,10),label:d.toLocaleDateString(undefined,{month:"short",day:"numeric"}),count:0});}
-    const index = new Map(days.map((d,i)=>[d.key,i]));
-    items.forEach(item=>{const key=String(item.first_seen||"").slice(0,10);if(index.has(key))days[index.get(key)].count++;});
-    const max=Math.max(1,...days.map(d=>d.count)), w=640,h=205,left=28,right=10,top=12,bottom=32,plotW=w-left-right,plotH=h-top-bottom;
-    const pts=days.map((d,i)=>({x:left+i*plotW/(days.length-1),y:top+plotH-(d.count/max)*plotH,...d}));
+  function renderTrend(items, snapshots) {
+    const saved=(snapshots||[]).filter(s=>s&&s.date).slice(-30);
+    let points;
+    if(saved.length) {
+      points=saved.map(s=>({label:date(s.date),total:Number(s.tracked_opportunities)||0,verified:Number((s.verification_counts||{}).verified_paid_candidate)||0}));
+    } else {
+      const days=[]; const now=new Date(); now.setHours(0,0,0,0);
+      for(let i=13;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);days.push({key:d.toISOString().slice(0,10),label:d.toLocaleDateString(undefined,{month:"short",day:"numeric"}),total:0,verified:0});}
+      const idx=new Map(days.map((d,i)=>[d.key,i]));
+      items.forEach(item=>{const key=String(item.first_seen||"").slice(0,10);if(idx.has(key)){const p=days[idx.get(key)];p.total++;if(item.verification==="verified_paid_candidate")p.verified++;}});
+      points=days;
+    }
+    const w=640,h=205,left=32,right=10,top=12,bottom=32,plotW=w-left-right,plotH=h-top-bottom;
+    const max=Math.max(1,...points.map(p=>p.total));
+    const xy=(key)=>points.map((p,i)=>({x:left+(points.length===1?plotW/2:i*plotW/(points.length-1)),y:top+plotH-(p[key]/max)*plotH,...p}));
     const grid=[0,.5,1].map(f=>{const y=top+plotH-f*plotH;return '<line x1="'+left+'" y1="'+y+'" x2="'+(w-right)+'" y2="'+y+'" stroke="#28303d" stroke-dasharray="3 5"/><text x="'+(left-8)+'" y="'+(y+4)+'" text-anchor="end" fill="#78869a" font-size="10">'+Math.round(max*f)+'</text>';}).join("");
-    const line=pts.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" ");
-    const area=line+" L "+pts[pts.length-1].x+" "+(top+plotH)+" L "+pts[0].x+" "+(top+plotH)+" Z";
-    const labels=pts.map((p,i)=>(i%2===0||i===pts.length-1)?'<text x="'+p.x+'" y="'+(h-8)+'" text-anchor="middle" fill="#78869a" font-size="9">'+escapeHtml(p.label)+'</text>':"").join("");
-    const circles=pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="#72a7ff" stroke="#11151d" stroke-width="2"><title>'+escapeHtml(p.label)+': '+p.count+' new issues</title></circle>').join("");
-    $("trend").innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="New issues by first-seen date for the past 14 days">'+grid+'<path d="'+area+'" fill="#72a7ff" opacity=".10"/><path d="'+line+'" fill="none" stroke="#72a7ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+circles+labels+'</svg>';
+    const makeLine=(key,color)=>{const ps=xy(key);const d=ps.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" ");const dots=ps.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="2.8" fill="'+color+'"><title>'+escapeHtml(p.label)+': '+p[key]+'</title></circle>').join("");return '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'+dots;};
+    const labels=points.map((p,i)=>(i===0||i===points.length-1||(points.length>12&&i%Math.ceil(points.length/6)===0))?'<text x="'+(left+(points.length===1?plotW/2:i*plotW/(points.length-1)))+'" y="'+(h-8)+'" text-anchor="middle" fill="#78869a" font-size="9">'+escapeHtml(p.label)+'</text>':"").join("");
+    $("trend").innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Tracked opportunities and verified pre-check counts from daily ledger snapshots">'+grid+makeLine("total","#72a7ff")+makeLine("verified","#62d8d0")+labels+'</svg>'+(saved.length?'':'<div class="pipeline-note">Snapshot history begins after this upgrade is merged and the daily workflow runs. Showing a ledger-derived fallback for now.</div>');
   }
   function renderScores(items) {
     const bins=[{label:"0–4",min:0,max:4},{label:"5–9",min:5,max:9},{label:"10–14",min:10,max:14},{label:"15–19",min:15,max:19},{label:"20+",min:20,max:Infinity}];
@@ -118,6 +123,8 @@
       const response=await fetch(LEDGER_URL+"?t="+Date.now(),{cache:"no-store"});
       if(!response.ok)throw new Error("Ledger request returned HTTP "+response.status);
       const ledger=await response.json();
+      let history={snapshots:[]};
+      try { const hr=await fetch("https://raw.githubusercontent.com/"+OWNER+"/"+REPO+"/main/data/metrics-history.json?t="+Date.now(),{cache:"no-store"}); if(hr.ok) history=await hr.json(); } catch(_) { /* first deploy may not have historical snapshots yet */ }
       const raw=ledger.opportunities||{};
       opportunities=(Array.isArray(raw)?raw:Object.values(raw)).filter(x=>x&&typeof x==="object");
       const count=fn=>opportunities.filter(fn).length;
@@ -127,7 +134,7 @@
       $("paid").textContent=fmt(count(x=>x.status==="paid"));
       $("updated").textContent="Ledger updated "+when(ledger.updated_at);
       $("trackedFoot").textContent=fmt(count(x=>x.status==="discovered"))+" currently discovered";
-      renderTrend(opportunities);renderScores(opportunities);renderPipeline(opportunities);renderTable();
+      renderTrend(opportunities,history.snapshots||[]);renderScores(opportunities);renderPipeline(opportunities);renderTable();
       $("connection").textContent="GitHub data connected";
       try { const r=await fetch(RUNS_URL,{headers:{Accept:"application/vnd.github+json"}});if(!r.ok)throw new Error("Actions API HTTP "+r.status);renderRuns(await r.json()); }
       catch(e){$("runSummary").innerHTML='<div class="empty">Workflow API unavailable. <a href="https://github.com/'+OWNER+'/'+REPO+'/actions">Open Actions</a></div>'; $("runCount").textContent="UNAVAILABLE";}
