@@ -19,6 +19,36 @@ class ProviderError(RuntimeError):
     """Raised when no configured provider can complete a request."""
 
 
+def _http_error_description(exc: HTTPError) -> str:
+    """Return useful provider diagnostics without leaking configured API keys."""
+    status = getattr(exc, "code", None)
+    try:
+        raw = exc.read().decode("utf-8", errors="replace").strip()
+    except Exception:
+        raw = ""
+
+    detail = ""
+    if raw:
+        try:
+            payload = json.loads(raw)
+            provider_error = payload.get("error", payload) if isinstance(payload, dict) else payload
+            if isinstance(provider_error, dict):
+                detail = str(provider_error.get("message") or provider_error.get("status") or "")
+            else:
+                detail = str(provider_error)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            detail = raw
+
+    # Provider error messages should never echo credentials into GitHub logs.
+    for secret_name in ("GEMINI_API_KEY", "GEMINI", "GROQ_API_KEY"):
+        secret = os.environ.get(secret_name)
+        if secret:
+            detail = detail.replace(secret, "[REDACTED]")
+    detail = " ".join(detail.split())[:400]
+    prefix = f"HTTP {status}" if status is not None else "HTTP error"
+    return f"{prefix}: {detail}" if detail else prefix
+
+
 def _gemini(prompt: str, system: str | None, max_output_tokens: int) -> str:
     key = os.environ.get("GEMINI_API_KEY") or os.environ["GEMINI"]
     model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
@@ -64,10 +94,7 @@ def _groq(prompt: str, system: str | None, max_output_tokens: int) -> str:
             "max_tokens": max_output_tokens,
             "temperature": 0.1,
         }).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {key}",
-            "Content-Type": "application/json",
-        },
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
         method="POST",
     )
     with urlopen(request, timeout=45) as response:
@@ -87,8 +114,8 @@ def generate_text(
 ) -> str:
     """Generate text using configured providers, preferring Gemini by default.
 
-    Set BOUNTY_LLM_PROVIDER to 'gemini', 'groq', or 'auto'.
-    In auto mode, a failed provider may fall back to the next configured provider.
+    Set BOUNTY_LLM_PROVIDER to 'gemini', 'groq', or 'auto'. In auto mode,
+    a failed provider may fall back to the next configured provider.
     API keys are read only from environment variables and are never logged.
     """
     if not prompt.strip():
@@ -107,18 +134,24 @@ def generate_text(
     order = [preference] if preference in providers else ["gemini", "groq"]
     configured = [
         name for name in order
-        if os.environ.get(providers[name][0]) or (name == "gemini" and os.environ.get("GEMINI"))
+        if os.environ.get(providers[name][0])
+        or (name == "gemini" and os.environ.get("GEMINI"))
     ]
     if not configured:
         raise ProviderError(
-            "No free-tier LLM API key configured. Set GEMINI_API_KEY (or the compatible alias GEMINI) or GROQ_API_KEY."
+            "No free-tier LLM API key configured. Set GEMINI_API_KEY "
+            "(or the compatible alias GEMINI) or GROQ_API_KEY."
         )
 
     errors = []
     for name in configured:
         try:
             return providers[name][1](prompt, system, max_output_tokens)
-        except (HTTPError, URLError, TimeoutError, OSError, ValueError, KeyError, ProviderError) as exc:
+        except HTTPError as exc:
+            errors.append(f"{name}: {_http_error_description(exc)}")
+            if preference != "auto":
+                break
+        except (URLError, TimeoutError, OSError, ValueError, KeyError, ProviderError) as exc:
             errors.append(f"{name}: {type(exc).__name__}")
             if preference != "auto":
                 break
