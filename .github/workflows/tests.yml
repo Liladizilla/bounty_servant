@@ -1,0 +1,32 @@
+name: Bounty Servant Tests
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Python unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Python files
+        run: python -m compileall -q bounty_servant.py llm_provider.py notify_telegram.py tests
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
