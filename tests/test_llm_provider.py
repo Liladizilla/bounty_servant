@@ -45,6 +45,13 @@ class ProviderTests(unittest.TestCase):
         self.assertIn("generateContent", request.full_url)
         self.assertNotIn("test-key", request.headers.get("Authorization", ""))
 
+    def test_gemini_legacy_secret_name_returns_text(self):
+        payload = {"candidates": [{"content": {"parts": [{"text": "alias works"}]}}]}
+        with patch.dict(os.environ, {"GEMINI": "test-key"}, clear=True):
+            with patch("llm_provider.urlopen", return_value=FakeResponse(payload)):
+                result = llm_provider.generate_text("inspect issue")
+        self.assertEqual(result, "alias works")
+
     def test_groq_request_returns_text(self):
         payload = {"choices": [{"message": {"content": "review plan"}}]}
         env = {"GROQ_API_KEY": "test-key", "BOUNTY_LLM_PROVIDER": "groq"}

@@ -1,7 +1,7 @@
 """Small, dependency-free adapter for free-tier LLM APIs.
 
 Supported providers:
-- Google Gemini API (GEMINI_API_KEY)
+- Google Gemini API (GEMINI_API_KEY, with GEMINI as a compatible secret-name alias)
 - Groq OpenAI-compatible API (GROQ_API_KEY)
 
 No provider is contacted unless generate_text() is called.
@@ -20,7 +20,7 @@ class ProviderError(RuntimeError):
 
 
 def _gemini(prompt: str, system: str | None, max_output_tokens: int) -> str:
-    key = os.environ["GEMINI_API_KEY"]
+    key = os.environ.get("GEMINI_API_KEY") or os.environ["GEMINI"]
     model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -105,10 +105,13 @@ def generate_text(
         raise ValueError("BOUNTY_LLM_PROVIDER must be auto, gemini, or groq")
 
     order = [preference] if preference in providers else ["gemini", "groq"]
-    configured = [name for name in order if os.environ.get(providers[name][0])]
+    configured = [
+        name for name in order
+        if os.environ.get(providers[name][0]) or (name == "gemini" and os.environ.get("GEMINI"))
+    ]
     if not configured:
         raise ProviderError(
-            "No free-tier LLM API key configured. Set GEMINI_API_KEY or GROQ_API_KEY."
+            "No free-tier LLM API key configured. Set GEMINI_API_KEY (or the compatible alias GEMINI) or GROQ_API_KEY."
         )
 
     errors = []
