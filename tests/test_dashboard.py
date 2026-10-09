@@ -1,4 +1,7 @@
+import os
 import pathlib
+import shutil
+import subprocess
 import unittest
 from html.parser import HTMLParser
 
@@ -62,6 +65,16 @@ class DashboardSmokeTests(unittest.TestCase):
         self.assertNotIn("https://cdn.jsdelivr.net", self.source)
         self.assertNotIn("https://unpkg.com", self.source)
         self.assertGreater(self.parser.scripts, 0)
+
+    def test_dashboard_interactions_in_utc_and_western_timezone(self):
+        if not shutil.which("node"):
+            self.skipTest("Node.js is not installed")
+        harness = pathlib.Path(__file__).with_name("dashboard_behavior.cjs")
+        for timezone in ("UTC", "America/Los_Angeles"):
+            with self.subTest(timezone=timezone):
+                env = {**os.environ, "TZ": timezone}
+                result = subprocess.run(["node", str(harness)], env=env, text=True, capture_output=True, check=False)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":

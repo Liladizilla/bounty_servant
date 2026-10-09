@@ -35,12 +35,17 @@ class MetricsHistoryTests(unittest.TestCase):
         self.assertEqual(second["snapshots"][0]["updated_at"], later.isoformat())
 
     def test_history_is_sorted_and_retains_latest_365_days(self):
-        old = [{"date": f"2025-01-{i:02d}", "tracked_opportunities": i} for i in range(1, 29)]
+        from datetime import timedelta
+        # Use 400 distinct dates ending yesterday, then add today's snapshot.
+        end = datetime(2026, 10, 8).date()
+        old = [{"date": (end - timedelta(days=offset)).isoformat(), "tracked_opportunities": offset}
+               for offset in range(399, -1, -1)]
         history = update_history(self.ledger, {"snapshots": old}, self.now)
         dates = [item["date"] for item in history["snapshots"]]
         self.assertEqual(dates, sorted(dates))
-        self.assertLessEqual(len(dates), 365)
+        self.assertEqual(len(dates), 365)
         self.assertEqual(dates[-1], "2026-10-09")
+        self.assertEqual(dates[0], (end - timedelta(days=363)).isoformat())
 
 
 if __name__ == "__main__":
