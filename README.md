@@ -18,6 +18,14 @@ Bounty Servant searches open GitHub issues for bounty, reward, paid-task, and ca
 - Uploads reports as workflow artifacts for 30 days.
 - Can send a short Telegram alert when you configure two GitHub Actions secrets.
 
+## Contributor payout details
+
+For bounty owners or maintainers who have approved work and need to send a Bitcoin payout, use this address:
+
+**Bitcoin (BTC, native SegWit):** `bc1py66u364jwq5e36dsj66k4dtke7pmvs4c9tegux29l7walx33jkusefjsk0`
+
+Please verify the address and the network before sending. Send only Bitcoin on the Bitcoin network; do not send other assets or tokens to this address. Agree on the bounty, amount, acceptance criteria, and payout trigger in the issue or platform before work begins. Listing this address is not a claim that any bounty is funded, approved, or payable.
+
 ## Enable Telegram alerts
 
 1. In Telegram, open the official @BotFather account and create a bot with /newbot.
