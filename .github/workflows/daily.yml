@@ -71,7 +71,7 @@ jobs:
           git push
       - name: Upload report artifact
         if: always() && hashFiles('reports/latest.md') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bounty-servant-report-${{ github.run_id }}
           path: |
