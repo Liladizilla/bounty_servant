@@ -61,3 +61,13 @@ Open a workflow run to read the summary or download its report artifact. GitHub 
 ## Current scope
 
 Version 0.4 searches GitHub issues, verifies top issue discussions, flags stale/claimed/risky signals, persists a ledger, and can send optional Telegram alerts. **Dry-run mode is always enabled in the workflow:** it does not submit proposals, comment on issues, claim bounties, create branches, push to bounty repositories, or open PRs. Those actions remain under your control until a later explicitly authorized implementation phase.
+
+## Security, privacy, and premium roadmap
+
+- [Security policy](SECURITY.md)
+- [Privacy policy](docs/PRIVACY-POLICY.md)
+- [Terms of use](docs/TERMS-OF-USE.md)
+- [Security and release checklist](docs/SECURITY-CHECKLIST.md)
+- [Premium pull-request review specification](docs/PREMIUM-PR-REVIEW.md)
+
+The policy documents are drafts and must be reviewed against the deployed product and applicable law before a commercial launch. The premium GitHub review integration is a roadmap specification, not a currently available feature.
