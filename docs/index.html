@@ -170,10 +170,12 @@
   ["search","verificationFilter","statusFilter"].forEach(id=>$(id).addEventListener(id==="search"?"input":"change",()=>renderTable()));
   load();
   // Keep an already-open dashboard current without requiring a manual reload.
-  // load() uses timestamped URLs and cache:no-store for repository data.
-  window.setInterval(() => {
-    if (!$("refresh").disabled) load();
-  }, 15 * 60 * 1000);
+  // The typeof guard also lets the dashboard logic run in non-browser smoke tests.
+  if (typeof setInterval === "function") {
+    setInterval(() => {
+      if (!$("refresh").disabled) load();
+    }, 15 * 60 * 1000);
+  }
 })();
 </script>
 </body>
