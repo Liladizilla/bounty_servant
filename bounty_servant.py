@@ -137,9 +137,13 @@ def api_json(path: str, token: str | None) -> dict | list | None:
             print(f"GitHub API error for {path}: {exc}", file=sys.stderr); return None
     return None
 
-def github_search(query: str, token: str | None) -> list[dict]:
+def github_search(query: str, token: str | None) -> list[dict] | None:
+    """Return matching issues, or None when the API request failed."""
     payload = api_json("/search/issues?" + urlencode({"q": query, "per_page": MAX_PER_QUERY, "sort": "updated", "order": "desc"}), token)
-    return payload.get("items", []) if isinstance(payload, dict) else []
+    if not isinstance(payload, dict):
+        return None
+    items = payload.get("items", [])
+    return items if isinstance(items, list) else None
 
 def verify_issue(issue: dict, token: str | None) -> dict:
     url = issue.get("html_url") or issue.get("url", "")
@@ -189,8 +193,9 @@ def update_ledger(ledger: dict, candidates: list[dict], now: datetime) -> None:
     LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
     LEDGER_PATH.write_text(json.dumps(ledger, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-def build_report(issues: list[dict], generated_at: datetime, query_count: int, failed_queries: int, verified_count: int) -> str:
-    lines = ["# Bounty Servant: Daily Radar", "", f"Generated: **{generated_at.strftime('%Y-%m-%d %H:%M UTC')}**", "", f"- Unique candidates: **{len(issues)}**", f"- Verified paid candidates (automated pre-check): **{verified_count}**", f"- Search queries: **{query_count}**", f"- Empty/failed queries: **{failed_queries}**", "", "> Dry-run mode is active. No issue comments, claims, branches, pushes, code changes, or pull requests were performed.", "> An automated verification is a shortlist signal, not proof of funding or payment.", ""]
+def build_report(issues: list[dict], generated_at: datetime, query_count: int, empty_queries: int, failed_queries: int, verified_count: int) -> str:
+    lines = ["# Bounty Servant: Daily Radar", "", f"Generated: **{generated_at.strftime('%Y-%m-%d %H:%M UTC')}**", "", f"- Unique candidates: **{len(issues)}**", f"- Verified paid candidates (automated pre-check): **{verified_count}**", f"- Search queries: **{query_count}**", f"- Queries with no matches: **{empty_queries}**",
+        f"- Failed searches/API requests: **{failed_queries}**", "", "> Dry-run mode is active. No issue comments, claims, branches, pushes, code changes, or pull requests were performed.", "> An automated verification is a shortlist signal, not proof of funding or payment.", ""]
     if not issues: lines += ["No candidates were returned by the configured searches.", ""]; return "\n".join(lines)
     for index, issue in enumerate(issues[:MAX_REPORT_ITEMS], 1):
         flags = "; ".join(issue["flags"]) if issue["flags"] else "No automated warning detected"
@@ -200,10 +205,13 @@ def build_report(issues: list[dict], generated_at: datetime, query_count: int, f
 
 def main() -> int:
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-    unique: dict[int | str, dict] = {}; empty_or_failed = 0
+    unique: dict[int | str, dict] = {}; empty_queries = 0; failed_queries = 0
     for query in SEARCH_QUERIES:
         results = github_search(query, token)
-        if not results: empty_or_failed += 1
+        if results is None:
+            failed_queries += 1
+            continue
+        if not results: empty_queries += 1
         for issue in results:
             if "pull_request" not in issue:
                 key = issue.get("id") or issue.get("html_url")
@@ -214,7 +222,7 @@ def main() -> int:
     verified_count = sum(item.get("verification") == "verified_paid_candidate" for item in ranked)
     now = datetime.now(timezone.utc); ledger = load_ledger(); update_ledger(ledger, ranked, now)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    report = build_report(ranked, now, len(SEARCH_QUERIES), empty_or_failed, verified_count)
+    report = build_report(ranked, now, len(SEARCH_QUERIES), empty_queries, failed_queries, verified_count)
     (OUTPUT_DIR / f"bounties-{now:%Y-%m-%d}.md").write_text(report, encoding="utf-8")
     (OUTPUT_DIR / "latest.md").write_text(report, encoding="utf-8")
     (OUTPUT_DIR / "latest.json").write_text(json.dumps({"generated_at": now.isoformat(), "dry_run": DRY_RUN, "query_count": len(SEARCH_QUERIES), "empty_or_failed_queries": empty_or_failed, "candidate_count": len(ranked), "verified_paid_candidate_count": verified_count, "candidates": ranked}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

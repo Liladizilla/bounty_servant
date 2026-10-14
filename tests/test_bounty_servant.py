@@ -1,7 +1,10 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from bounty_servant import classify_reward, extract_reward, has_positive_reward, score_issue, status_flags
+from unittest.mock import patch
+
+import bounty_servant
+from bounty_servant import classify_reward, extract_reward, github_search, has_positive_reward, score_issue, status_flags
 
 
 class RewardDetectionTests(unittest.TestCase):
@@ -53,6 +56,23 @@ class RewardDetectionTests(unittest.TestCase):
     def test_zero_dollar_reward_is_not_positive(self):
         self.assertFalse(has_positive_reward("$0"))
         self.assertTrue(has_positive_reward("$25"))
+
+
+    def test_search_api_failure_is_not_reported_as_no_matches(self):
+        with patch("bounty_servant.api_json", return_value=None):
+            self.assertIsNone(github_search("is:issue bounty", None))
+
+    def test_successful_search_with_no_matches_returns_empty_list(self):
+        with patch("bounty_servant.api_json", return_value={"items": []}):
+            self.assertEqual(github_search("is:issue bounty", None), [])
+
+    def test_report_separates_empty_searches_from_api_failures(self):
+        report = bounty_servant.build_report(
+            [], datetime.now(timezone.utc), 14, empty_queries=11,
+            failed_queries=3, verified_count=0
+        )
+        self.assertIn("Queries with no matches: **11**", report)
+        self.assertIn("Failed searches/API requests: **3**", report)
 
 
 if __name__ == "__main__":
