@@ -75,5 +75,51 @@ class RewardDetectionTests(unittest.TestCase):
         self.assertIn("Failed searches/API requests: **3**", report)
 
 
+    def test_main_writes_failure_report_and_returns_nonzero_when_every_search_fails(self):
+        import json
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            with (
+                patch.object(bounty_servant, "OUTPUT_DIR", root / "reports"),
+                patch.object(bounty_servant, "LEDGER_PATH", root / "data" / "ledger.json"),
+                patch.object(bounty_servant, "github_search", return_value=None),
+                patch("builtins.print"),
+            ):
+                result = bounty_servant.main()
+
+            self.assertEqual(result, 1)
+            payload = json.loads((root / "reports" / "latest.json").read_text())
+            self.assertEqual(payload["failed_query_count"], len(bounty_servant.SEARCH_QUERIES))
+            self.assertEqual(payload["empty_query_count"], 0)
+            self.assertEqual(payload["empty_or_failed_queries"], len(bounty_servant.SEARCH_QUERIES))
+            report = (root / "reports" / "latest.md").read_text()
+            self.assertIn("Failed searches/API requests", report)
+            self.assertIn("No candidates were returned", report)
+
+    def test_main_does_not_treat_successful_empty_searches_as_failures(self):
+        import json
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            with (
+                patch.object(bounty_servant, "OUTPUT_DIR", root / "reports"),
+                patch.object(bounty_servant, "LEDGER_PATH", root / "data" / "ledger.json"),
+                patch.object(bounty_servant, "github_search", return_value=[]),
+                patch("builtins.print"),
+            ):
+                result = bounty_servant.main()
+
+            self.assertEqual(result, 0)
+            payload = json.loads((root / "reports" / "latest.json").read_text())
+            self.assertEqual(payload["failed_query_count"], 0)
+            self.assertEqual(payload["empty_query_count"], len(bounty_servant.SEARCH_QUERIES))
+
+
+
 if __name__ == "__main__":
     unittest.main()
