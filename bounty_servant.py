@@ -225,11 +225,24 @@ def main() -> int:
     report = build_report(ranked, now, len(SEARCH_QUERIES), empty_queries, failed_queries, verified_count)
     (OUTPUT_DIR / f"bounties-{now:%Y-%m-%d}.md").write_text(report, encoding="utf-8")
     (OUTPUT_DIR / "latest.md").write_text(report, encoding="utf-8")
-    (OUTPUT_DIR / "latest.json").write_text(json.dumps({"generated_at": now.isoformat(), "dry_run": DRY_RUN, "query_count": len(SEARCH_QUERIES), "empty_or_failed_queries": empty_or_failed, "candidate_count": len(ranked), "verified_paid_candidate_count": verified_count, "candidates": ranked}, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    empty_or_failed = empty_queries + failed_queries
+    (OUTPUT_DIR / "latest.json").write_text(json.dumps({
+        "generated_at": now.isoformat(),
+        "dry_run": DRY_RUN,
+        "query_count": len(SEARCH_QUERIES),
+        "empty_query_count": empty_queries,
+        "failed_query_count": failed_queries,
+        "empty_or_failed_queries": empty_or_failed,
+        "candidate_count": len(ranked),
+        "verified_paid_candidate_count": verified_count,
+        "candidates": ranked,
+    }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Found {len(ranked)} unique issue candidates; verified pre-checks: {verified_count}.")
     print(f"Dry-run: {DRY_RUN}; empty/failed queries: {empty_or_failed}/{len(SEARCH_QUERIES)}")
     print(f"Report: reports/latest.md; Ledger: {LEDGER_PATH}")
     print("\n" + report[:5000])
-    return 0
+    # Keep the report artifact for diagnosis, but fail the workflow if every
+    # search failed: an empty candidate list must not look like a healthy run.
+    return 1 if failed_queries == len(SEARCH_QUERIES) else 0
 
 if __name__ == "__main__": raise SystemExit(main())
