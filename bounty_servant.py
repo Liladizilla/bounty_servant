@@ -85,8 +85,16 @@ def classify_reward(title: str, body: str, labels: list[str]) -> tuple[str, str 
         return "Potential bounty; amount unverified", None
     return "Needs manual verification", None
 
+def assignee_logins(issue: dict) -> list[str]:
+    """Logins of users already assigned to the issue."""
+    assignees = issue.get("assignees") or []
+    return [item.get("login") for item in assignees if isinstance(item, dict) and item.get("login")]
+
 def status_flags(issue: dict, combined: str) -> list[str]:
     flags: list[str] = []
+    assigned_to = assignee_logins(issue)
+    if assigned_to:
+        flags.append(f"Claimed: already assigned to {', '.join(assigned_to)}")
     updated = parse_datetime(issue.get("updated_at"))
     if updated:
         age_days = max(0, (datetime.now(timezone.utc) - updated).days)
@@ -117,6 +125,7 @@ def score_issue(issue: dict) -> tuple[int, str, str | None, list[str]]:
     comments = int(issue.get("comments") or 0)
     score += 2 if comments <= 5 else 1 if comments <= 15 else 0
     if any("Possible claimed/paid" in flag for flag in flags): score -= 5
+    if any(flag.startswith("Claimed:") for flag in flags): score -= 15
     if any("Risk signal" in flag for flag in flags): score -= 10
     return max(0, score), status, amount, flags
 
@@ -160,10 +169,13 @@ def verify_issue(issue: dict, token: str | None) -> dict:
     open_issue = detail.get("state") == "open"
     risk = any(flag.startswith("Risk signal") for flag in flags)
     claimed = any("claimed/paid" in flag for flag in flags)
-    verified = open_issue and has_positive_reward(amount) and not risk and not claimed
+    assigned_to = assignee_logins(detail)
+    verified = open_issue and has_positive_reward(amount) and not risk and not claimed and not assigned_to
     return {
         "verification": "verified_paid_candidate" if verified else "needs_manual_review",
-        "verification_reason": "Open issue with explicit payout evidence and no automated claim/risk signal" if verified else "Open/amount/claim/risk terms require manual confirmation",
+        "verification_reason": "Open issue with explicit payout evidence, no assignee, and no automated claim/risk signal" if verified else "Open/amount/claim/risk/assignee terms require manual confirmation",
+        "assignees": assigned_to,
+        "assigned": bool(assigned_to),
         "issue_state": detail.get("state"), "comment_count_verified": len(comments) if isinstance(comments, list) else None,
         "latest_comment_excerpt": re.sub(r"\s+", " ", comment_text).strip()[-500:], "verified_reward_evidence": amount,
         "verified_flags": flags,
@@ -173,7 +185,8 @@ def compact_issue(issue: dict) -> dict:
     labels = [item.get("name", "") if isinstance(item, dict) else str(item) for item in issue.get("labels", [])]
     score, status, amount, flags = score_issue(issue)
     body = re.sub(r"\s+", " ", issue.get("body") or "").strip()
-    return {"id": issue.get("id"), "title": issue.get("title") or "(untitled issue)", "repository": (issue.get("repository_url") or "").replace(f"{API_ROOT}/repos/", ""), "url": issue.get("html_url", ""), "state": issue.get("state", "open"), "updated_at": issue.get("updated_at", ""), "created_at": issue.get("created_at", ""), "comments": int(issue.get("comments") or 0), "labels": labels, "score": score, "reward_status": status, "reward_evidence": amount, "flags": flags, "excerpt": body[:360] + ("…" if len(body) > 360 else "")}
+    assigned_to = assignee_logins(issue)
+    return {"id": issue.get("id"), "assignees": assigned_to, "claimed": bool(assigned_to), "title": issue.get("title") or "(untitled issue)", "repository": (issue.get("repository_url") or "").replace(f"{API_ROOT}/repos/", ""), "url": issue.get("html_url", ""), "state": issue.get("state", "open"), "updated_at": issue.get("updated_at", ""), "created_at": issue.get("created_at", ""), "comments": int(issue.get("comments") or 0), "labels": labels, "score": score, "reward_status": status, "reward_evidence": amount, "flags": flags, "excerpt": body[:360] + ("…" if len(body) > 360 else "")}
 
 def load_ledger() -> dict:
     if not LEDGER_PATH.exists(): return {"schema_version": 1, "updated_at": None, "opportunities": {}}
@@ -188,7 +201,7 @@ def update_ledger(ledger: dict, candidates: list[dict], now: datetime) -> None:
     for item in candidates:
         key = item["url"] or str(item.get("id"))
         old = opportunities.get(key, {})
-        opportunities[key] = {**old, "first_seen": old.get("first_seen", now.isoformat()), "last_seen": now.isoformat(), "repository": item["repository"], "issue_url": item["url"], "title": item["title"], "last_score": item["score"], "last_reward_evidence": item["reward_evidence"], "verification": item.get("verification", "not_verified"), "comment_url": old.get("comment_url"), "branch_name": old.get("branch_name"), "pr_url": old.get("pr_url"), "status": old.get("status", "discovered")}
+        opportunities[key] = {**old, "first_seen": old.get("first_seen", now.isoformat()), "last_seen": now.isoformat(), "repository": item["repository"], "issue_url": item["url"], "title": item["title"], "last_score": item["score"], "last_reward_evidence": item["reward_evidence"], "verification": item.get("verification", "not_verified"), "assignees": item.get("assignees", []), "claimed": item.get("claimed", False), "comment_url": old.get("comment_url"), "branch_name": old.get("branch_name"), "pr_url": old.get("pr_url"), "status": old.get("status", "discovered")}
     ledger["updated_at"] = now.isoformat()
     LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
     LEDGER_PATH.write_text(json.dumps(ledger, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
