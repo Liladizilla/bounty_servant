@@ -53,6 +53,18 @@ class RewardDetectionTests(unittest.TestCase):
         claimed = {**base, "body": "A $100 reward is available. The bounty has been claimed."}
         self.assertLess(score_issue(claimed)[0], score_issue(base)[0])
 
+    def test_assigned_issue_gets_claim_flag(self):
+        issue = {"assignees": [{"login": "ke1rro"}]}
+        flags = status_flags(issue, "A $3000 bounty is available")
+        self.assertTrue(any(flag.startswith("Claimed:") and "ke1rro" in flag for flag in flags))
+
+    def test_assigned_issue_scores_much_lower(self):
+        recent = datetime.now(timezone.utc).isoformat()
+        base = {"title": "Fix parser bounty", "body": "A $500 reward is available.", "labels": [],
+                "updated_at": recent, "comments": 2, "assignees": []}
+        taken = {**base, "assignees": [{"login": "someone"}]}
+        self.assertGreaterEqual(score_issue(base)[0] - score_issue(taken)[0], 15)
+
     def test_zero_dollar_reward_is_not_positive(self):
         self.assertFalse(has_positive_reward("$0"))
         self.assertTrue(has_positive_reward("$25"))
