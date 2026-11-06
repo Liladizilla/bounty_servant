@@ -730,33 +730,33 @@
       }
     },
     {
-      "average_score": 8.77,
+      "average_score": 8.75,
       "date": "2026-11-06",
       "median_score": 7.0,
-      "new_first_seen_today": 366,
+      "new_first_seen_today": 511,
       "score_distribution": {
-        "0_4": 1032,
-        "10_14": 2799,
-        "15_19": 1111,
-        "20_plus": 206,
-        "5_9": 4588
+        "0_4": 1072,
+        "10_14": 2849,
+        "15_19": 1115,
+        "20_plus": 209,
+        "5_9": 4636
       },
       "status_counts": {
         "accepted": 0,
-        "discovered": 9736,
+        "discovered": 9881,
         "investigating": 0,
         "paid": 0,
         "proposal_ready": 0,
         "submitted": 0
       },
-      "tracked_opportunities": 9736,
-      "updated_at": "2026-11-06T06:30:06.252063+00:00",
+      "tracked_opportunities": 9881,
+      "updated_at": "2026-11-06T10:07:15.765585+00:00",
       "verification_counts": {
         "needs_manual_review": 19,
-        "not_verified": 9584,
-        "verified_paid_candidate": 133
+        "not_verified": 9728,
+        "verified_paid_candidate": 134
       }
     }
   ],
-  "updated_at": "2026-11-06T06:30:06.252063+00:00"
+  "updated_at": "2026-11-06T10:07:15.765585+00:00"
 }
