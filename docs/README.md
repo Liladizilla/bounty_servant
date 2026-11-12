@@ -2,6 +2,20 @@
 
 A dependency-free, responsive dashboard for the public repository ledger and recent GitHub Actions runs.
 
+## Analytics
+
+This project uses [Vercel Web Analytics](https://vercel.com/docs/analytics) to track page views and user interactions. The analytics script is bundled using esbuild and loaded as an ES module.
+
+### Building the analytics bundle
+
+After installing dependencies, run:
+
+```bash
+npm run build
+```
+
+This will bundle the analytics code into `analytics.bundle.js` which is referenced by `index.html`.
+
 ## Publish with GitHub Pages
 
 The dashboard lives at `docs/index.html`. In the repository settings, open **Pages** and select **Deploy from a branch**, then choose `main` and `/docs`. Once enabled, the dashboard URL is:
