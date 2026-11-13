@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import bounty_servant
-from bounty_servant import classify_reward, extract_reward, github_search, has_positive_reward, score_issue, status_flags
+from bounty_servant import classify_reward, extract_reward, freshness_adjustment, github_search, has_positive_reward, repo_reputation, score_issue, status_flags
 
 
 class RewardDetectionTests(unittest.TestCase):
@@ -64,6 +64,35 @@ class RewardDetectionTests(unittest.TestCase):
                 "updated_at": recent, "comments": 2, "assignees": []}
         taken = {**base, "assignees": [{"login": "someone"}]}
         self.assertGreaterEqual(score_issue(base)[0] - score_issue(taken)[0], 15)
+
+    def test_young_repo_is_penalised(self):
+        now = datetime.now(timezone.utc)
+        young = {"stargazers_count": 3, "created_at": (now - timedelta(days=4)).isoformat(),
+                 "pushed_at": now.isoformat()}
+        old = {"stargazers_count": 3, "created_at": (now - timedelta(days=900)).isoformat(),
+               "pushed_at": now.isoformat()}
+        self.assertLess(repo_reputation(young, now)[0], repo_reputation(old, now)[0])
+        self.assertTrue(any("Young repo" in flag for flag in repo_reputation(young, now)[1]))
+
+    def test_popular_repo_is_boosted(self):
+        now = datetime.now(timezone.utc)
+        popular = {"stargazers_count": 2500, "created_at": (now - timedelta(days=900)).isoformat(),
+                   "pushed_at": now.isoformat()}
+        self.assertGreater(repo_reputation(popular, now)[0], 0)
+
+    def test_fresh_opportunity_outranks_stale_one(self):
+        now = datetime.now(timezone.utc)
+        issue = {"title": "Fix parser bounty", "body": "A $400 reward is available.", "labels": [],
+                 "updated_at": now.isoformat(), "comments": 1, "assignees": []}
+        fresh = score_issue(issue, None, (now - timedelta(hours=2)).isoformat(), now)[0]
+        stale = score_issue(issue, None, (now - timedelta(days=40)).isoformat(), now)[0]
+        self.assertGreater(fresh, stale)
+
+    def test_archived_repo_is_flagged(self):
+        now = datetime.now(timezone.utc)
+        adjustment, flags = repo_reputation({"archived": True, "stargazers_count": 5}, now)
+        self.assertLess(adjustment, 0)
+        self.assertTrue(any("archived" in flag.lower() for flag in flags))
 
     def test_zero_dollar_reward_is_not_positive(self):
         self.assertFalse(has_positive_reward("$0"))
