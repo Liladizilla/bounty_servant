@@ -1092,7 +1092,35 @@
         "not_verified": 12850,
         "verified_paid_candidate": 179
       }
+    },
+    {
+      "average_score": 8.44,
+      "date": "2026-11-19",
+      "median_score": 7.0,
+      "new_first_seen_today": 332,
+      "score_distribution": {
+        "0_4": 2010,
+        "10_14": 3768,
+        "15_19": 1414,
+        "20_plus": 389,
+        "5_9": 5800
+      },
+      "status_counts": {
+        "accepted": 0,
+        "discovered": 13381,
+        "investigating": 0,
+        "paid": 0,
+        "proposal_ready": 0,
+        "submitted": 0
+      },
+      "tracked_opportunities": 13381,
+      "updated_at": "2026-11-19T10:55:05.132528+00:00",
+      "verification_counts": {
+        "needs_manual_review": 23,
+        "not_verified": 13186,
+        "verified_paid_candidate": 172
+      }
     }
   ],
-  "updated_at": "2026-11-18T10:54:03.727366+00:00"
+  "updated_at": "2026-11-19T10:55:05.132528+00:00"
 }
