@@ -26,6 +26,8 @@ MAX_PER_QUERY = 100
 MAX_REPORT_ITEMS = 50
 MAX_VERIFY_ITEMS = 20
 STALE_AFTER_DAYS = 90
+FRESH_BONUS_DAYS = 3
+MAX_REPO_LOOKUPS = 250
 DRY_RUN = os.environ.get("BOUNTY_SERVANT_DRY_RUN", "true").lower() not in {"0", "false", "no"}
 SEARCH_QUERIES = [
     "is:issue is:open bounty", "is:issue is:open label:bounty",
@@ -106,7 +108,60 @@ def status_flags(issue: dict, combined: str) -> list[str]:
         flags.append("Risk signal: never pay upfront or share secrets")
     return flags
 
-def score_issue(issue: dict) -> tuple[int, str, str | None, list[str]]:
+def repo_reputation(repo: dict | None, now: datetime) -> tuple[int, list[str]]:
+    """Ranking adjustment from repository trust signals.
+
+    The same bounty is worth far less in a repo created yesterday than in a
+    repo with stars, history, and recent commits.
+    """
+    if not isinstance(repo, dict):
+        return 0, []
+    adjustment = 0
+    flags: list[str] = []
+    stars = int(repo.get("stargazers_count") or 0)
+    if stars >= 1000:
+        adjustment += 6
+    elif stars >= 100:
+        adjustment += 4
+    elif stars >= 20:
+        adjustment += 2
+    if repo.get("archived"):
+        adjustment -= 10
+        flags.append("Repo archived: work may not be merged")
+    created = parse_datetime(repo.get("created_at"))
+    if created:
+        age_days = max(0, (now - created).days)
+        if age_days < 30:
+            adjustment -= 8
+            flags.append(f"Young repo: created {age_days} days ago")
+        elif age_days < 90:
+            adjustment -= 3
+            flags.append(f"Recently created repo: {age_days} days old")
+    pushed = parse_datetime(repo.get("pushed_at"))
+    if pushed:
+        idle_days = max(0, (now - pushed).days)
+        if idle_days > 180:
+            adjustment -= 3
+            flags.append(f"Repo inactive for {idle_days} days")
+    return adjustment, flags
+
+def freshness_adjustment(first_seen: str | None, now: datetime) -> tuple[int, list[str]]:
+    """Reward newly discovered work and decay anything the radar has sat on."""
+    seen = parse_datetime(first_seen)
+    if not seen:
+        return 0, []
+    age_days = max(0, (now - seen).days)
+    if age_days == 0:
+        return 4, ["New today"]
+    if age_days <= FRESH_BONUS_DAYS:
+        return 2, []
+    if age_days > 30:
+        return -6, [f"Tracked for {age_days} days without progress"]
+    if age_days > 14:
+        return -3, []
+    return 0, []
+
+def score_issue(issue: dict, repo_info: dict | None = None, first_seen: str | None = None, now: datetime | None = None) -> tuple[int, str, str | None, list[str]]:
     title, body = issue.get("title") or "", issue.get("body") or ""
     labels = [item.get("name", "") if isinstance(item, dict) else str(item) for item in issue.get("labels", [])]
     combined = f"{title}\n{body}"
@@ -127,6 +182,12 @@ def score_issue(issue: dict) -> tuple[int, str, str | None, list[str]]:
     if any("Possible claimed/paid" in flag for flag in flags): score -= 5
     if any(flag.startswith("Claimed:") for flag in flags): score -= 15
     if any("Risk signal" in flag for flag in flags): score -= 10
+    reference_now = now or datetime.now(timezone.utc)
+    repo_adjustment, repo_flags = repo_reputation(repo_info, reference_now)
+    freshness, fresh_flags = freshness_adjustment(first_seen, reference_now)
+    score += repo_adjustment + freshness
+    flags.extend(repo_flags)
+    flags.extend(fresh_flags)
     return max(0, score), status, amount, flags
 
 def api_json(path: str, token: str | None) -> dict | list | None:
@@ -181,12 +242,12 @@ def verify_issue(issue: dict, token: str | None) -> dict:
         "verified_flags": flags,
     }
 
-def compact_issue(issue: dict) -> dict:
+def compact_issue(issue: dict, repo_info: dict | None = None, first_seen: str | None = None, now: datetime | None = None) -> dict:
     labels = [item.get("name", "") if isinstance(item, dict) else str(item) for item in issue.get("labels", [])]
-    score, status, amount, flags = score_issue(issue)
+    score, status, amount, flags = score_issue(issue, repo_info, first_seen, now)
     body = re.sub(r"\s+", " ", issue.get("body") or "").strip()
     assigned_to = assignee_logins(issue)
-    return {"id": issue.get("id"), "assignees": assigned_to, "claimed": bool(assigned_to), "title": issue.get("title") or "(untitled issue)", "repository": (issue.get("repository_url") or "").replace(f"{API_ROOT}/repos/", ""), "url": issue.get("html_url", ""), "state": issue.get("state", "open"), "updated_at": issue.get("updated_at", ""), "created_at": issue.get("created_at", ""), "comments": int(issue.get("comments") or 0), "labels": labels, "score": score, "reward_status": status, "reward_evidence": amount, "flags": flags, "excerpt": body[:360] + ("…" if len(body) > 360 else "")}
+    return {"id": issue.get("id"), "assignees": assigned_to, "claimed": bool(assigned_to), "repo_stars": (repo_info or {}).get("stargazers_count") if isinstance(repo_info, dict) else None, "title": issue.get("title") or "(untitled issue)", "repository": (issue.get("repository_url") or "").replace(f"{API_ROOT}/repos/", ""), "url": issue.get("html_url", ""), "state": issue.get("state", "open"), "updated_at": issue.get("updated_at", ""), "created_at": issue.get("created_at", ""), "comments": int(issue.get("comments") or 0), "labels": labels, "score": score, "reward_status": status, "reward_evidence": amount, "flags": flags, "excerpt": body[:360] + ("…" if len(body) > 360 else "")}
 
 def load_ledger() -> dict:
     if not LEDGER_PATH.exists(): return {"schema_version": 1, "updated_at": None, "opportunities": {}}
@@ -201,7 +262,7 @@ def update_ledger(ledger: dict, candidates: list[dict], now: datetime) -> None:
     for item in candidates:
         key = item["url"] or str(item.get("id"))
         old = opportunities.get(key, {})
-        opportunities[key] = {**old, "first_seen": old.get("first_seen", now.isoformat()), "last_seen": now.isoformat(), "repository": item["repository"], "issue_url": item["url"], "title": item["title"], "last_score": item["score"], "last_reward_evidence": item["reward_evidence"], "verification": item.get("verification", "not_verified"), "assignees": item.get("assignees", []), "claimed": item.get("claimed", False), "comment_url": old.get("comment_url"), "branch_name": old.get("branch_name"), "pr_url": old.get("pr_url"), "status": old.get("status", "discovered")}
+        opportunities[key] = {**old, "first_seen": old.get("first_seen", now.isoformat()), "last_seen": now.isoformat(), "repository": item["repository"], "issue_url": item["url"], "title": item["title"], "last_score": item["score"], "last_reward_evidence": item["reward_evidence"], "verification": item.get("verification", "not_verified"), "assignees": item.get("assignees", []), "claimed": item.get("claimed", False), "repo_stars": item.get("repo_stars"), "comment_url": old.get("comment_url"), "branch_name": old.get("branch_name"), "pr_url": old.get("pr_url"), "status": old.get("status", "discovered")}
     ledger["updated_at"] = now.isoformat()
     LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
     LEDGER_PATH.write_text(json.dumps(ledger, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -216,6 +277,33 @@ def build_report(issues: list[dict], generated_at: datetime, query_count: int, e
     lines += ["## Next action plan (dry run)", "", "For each verified candidate, the next run may prepare a maintainer comment and implementation branch after a human review of the full issue, repository license, contribution guide, and payout terms. No external action is executed while dry-run mode is enabled.", "", "## Verification checklist", "", "1. Read the original issue and newest comments.\n2. Confirm the bounty is open, independent contributions are allowed, and payout terms are documented.\n3. Check acceptance criteria, deadline, license, and payment conditions.\n4. Never pay an upfront fee or disclose passwords, private keys, or seed phrases.", ""]
     return "\n".join(lines)
 
+def repository_of(issue: dict) -> str:
+    return (issue.get("repository_url") or "").replace(f"{API_ROOT}/repos/", "")
+
+def fetch_repo_reputation(issues, token: str | None) -> dict[str, dict]:
+    """Look up each repository once, capped to protect the API rate limit.
+
+    Repos attached to issues with explicit payout evidence are fetched first, so
+    the request budget goes where the ranking actually matters.
+    """
+    unique_repos: dict[str, dict] = {}
+    for issue in issues:
+        repo = repository_of(issue)
+        if not repo:
+            continue
+        combined = f"{issue.get('title') or ''}\n{issue.get('body') or ''}"
+        has_reward = bool(extract_reward(combined))
+        existing = unique_repos.get(repo)
+        if existing is None or (has_reward and not existing["reward"]):
+            unique_repos[repo] = {"reward": has_reward}
+    ordered = sorted(unique_repos.items(), key=lambda pair: pair[1]["reward"], reverse=True)
+    cache: dict[str, dict] = {}
+    for repo, _meta in ordered[:MAX_REPO_LOOKUPS]:
+        info = api_json(f"/repos/{repo}", token)
+        if isinstance(info, dict):
+            cache[repo] = info
+    return cache
+
 def main() -> int:
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     unique: dict[int | str, dict] = {}; empty_queries = 0; failed_queries = 0
@@ -229,11 +317,23 @@ def main() -> int:
             if "pull_request" not in issue:
                 key = issue.get("id") or issue.get("html_url")
                 if key is not None: unique[key] = issue
-    ranked = [compact_issue(issue) for issue in unique.values()]
+    now = datetime.now(timezone.utc)
+    ledger = load_ledger()
+    previous = ledger.get("opportunities", {})
+    repo_cache = fetch_repo_reputation(unique.values(), token)
+
+    def seen_before(issue: dict) -> str | None:
+        key = issue.get("html_url") or str(issue.get("id"))
+        return (previous.get(key) or {}).get("first_seen")
+
+    ranked = [
+        compact_issue(issue, repo_cache.get(repository_of(issue)), seen_before(issue), now)
+        for issue in unique.values()
+    ]
     ranked.sort(key=lambda item: (item["score"], item["updated_at"], -item["comments"]), reverse=True)
     for item in ranked[:MAX_VERIFY_ITEMS]: item.update(verify_issue(item, token))
     verified_count = sum(item.get("verification") == "verified_paid_candidate" for item in ranked)
-    now = datetime.now(timezone.utc); ledger = load_ledger(); update_ledger(ledger, ranked, now)
+    update_ledger(ledger, ranked, now)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     report = build_report(ranked, now, len(SEARCH_QUERIES), empty_queries, failed_queries, verified_count)
     (OUTPUT_DIR / f"bounties-{now:%Y-%m-%d}.md").write_text(report, encoding="utf-8")
